@@ -1,0 +1,9 @@
+django>=5.2
+djangorestframework
+django-cors-headers
+psycopg2-binary
+dj-database-url
+python-dotenv
+gunicorn
+requests
+watchdog>=3.0.0
