@@ -9,9 +9,10 @@ from .models import Conversation, Message, UserPreference, Memory
 from .services.llm import stream_llm
 from .services.context import get_user_context, build_system_prompt
 from .services.memory import extract_and_save
-
+from .services.analyser import analyse_and_update
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
 
 def json_error(msg, status=400):
     return JsonResponse({"error": msg}, status=status)
@@ -19,14 +20,16 @@ def json_error(msg, status=400):
 
 # ── Conversations ──────────────────────────────────────────────────────────
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class ConversationListView(LoginRequiredMixin, View):
     """GET  /api/conversations/       → list all conversations
-       POST /api/conversations/       → create a new conversation"""
+    POST /api/conversations/       → create a new conversation"""
 
     def get(self, request):
-        convs = Conversation.objects.filter(user=request.user) \
-                                    .values("id", "title", "updated_at")
+        convs = Conversation.objects.filter(user=request.user).values(
+            "id", "title", "updated_at"
+        )
         return JsonResponse({"conversations": list(convs)})
 
     def post(self, request):
@@ -37,8 +40,8 @@ class ConversationListView(LoginRequiredMixin, View):
 @method_decorator(csrf_exempt, name="dispatch")
 class ConversationDetailView(LoginRequiredMixin, View):
     """GET    /api/conversations/<id>/  → messages in conversation
-       PATCH  /api/conversations/<id>/  → rename
-       DELETE /api/conversations/<id>/  → delete"""
+    PATCH  /api/conversations/<id>/  → rename
+    DELETE /api/conversations/<id>/  → delete"""
 
     def _get_conv(self, request, conv_id):
         try:
@@ -72,17 +75,18 @@ class ConversationDetailView(LoginRequiredMixin, View):
 
 # ── Chat (streaming) ───────────────────────────────────────────────────────
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class ChatView(LoginRequiredMixin, View):
     """POST /api/chat/<conversation_id>/
-       Body: { "message": "..." }
-       Response: text/event-stream  →  data: {"token": "..."}  …  data: [DONE]
+    Body: { "message": "..." }
+    Response: text/event-stream  →  data: {"token": "..."}  …  data: [DONE]
     """
 
     def post(self, request, conv_id):
-        body     = json.loads(request.body)
+        body = json.loads(request.body)
         user_msg = body.get("message", "").strip()
-        user     = request.user
+        user = request.user
 
         if not user_msg:
             return json_error("message is required")
@@ -116,57 +120,88 @@ class ChatView(LoginRequiredMixin, View):
         # ── Build context ────────────────────────────────────────────────
         # Last 40 messages to stay within context window
         history = list(
-            conv.messages.order_by("created_at")
-                         .values("role", "content")[:40]
+            conv.messages.order_by("created_at").values("role", "content")[:40]
         )
-        ctx    = get_user_context(user)
+        ctx = get_user_context(user)
         system = build_system_prompt(ctx)
 
         # ── Stream ───────────────────────────────────────────────────────
+        # def stream():
+        #     full_response = ""
+        #     try:
+        #         for token in stream_llm(system=system, messages=history):
+        #             full_response += token
+        #             yield f"data: {json.dumps({'token': token})}\n\n"
+        #     except Exception as e:
+        #         yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        #     finally:
+        #         if full_response:
+        #             Message.objects.create(
+        #                 conversation=conv,
+        #                 role="assistant",
+        #                 content=full_response,
+        #             )
+        #             conv.save()   # bump updated_at so it sorts to top
+        #             extract_and_save(user, user_msg, full_response, conv)
+
+        #         yield "data: [DONE]\n\n"
+
+        # response = StreamingHttpResponse(stream(), content_type="text/event-stream")
+        # response["Cache-Control"]               = "no-cache"
+        # response["X-Accel-Buffering"]           = "no"   # disable Nginx buffering
+        # return response
+        # chat/views.py — update stream() inside ChatView.post
+        # Change the yield format from {"token": "..."} to plain text chunks
+
         def stream():
             full_response = ""
             try:
                 for token in stream_llm(system=system, messages=history):
                     full_response += token
-                    yield f"data: {json.dumps({'token': token})}\n\n"
+                    # assistant-ui reads plain "0:" prefixed data-stream format
+                    yield f"0:{json.dumps(token)}\n"
             except Exception as e:
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                yield f"3:{json.dumps(str(e))}\n"
             finally:
                 if full_response:
                     Message.objects.create(
-                        conversation=conv,
-                        role="assistant",
-                        content=full_response,
+                        conversation=conv, role="assistant", content=full_response
                     )
-                    conv.save()   # bump updated_at so it sorts to top
-                    extract_and_save(user, user_msg, full_response, conv)
+                    conv.save()
+                    analyse_and_update(user, user_msg, full_response, conv)
 
-                yield "data: [DONE]\n\n"
-
-        response = StreamingHttpResponse(stream(), content_type="text/event-stream")
-        response["Cache-Control"]               = "no-cache"
-        response["X-Accel-Buffering"]           = "no"   # disable Nginx buffering
+        response = StreamingHttpResponse(
+            stream(), content_type="text/plain; charset=utf-8"
+        )
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no"
         return response
 
 
 # ── Preferences ────────────────────────────────────────────────────────────
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class PreferencesView(LoginRequiredMixin, View):
     """GET /api/preferences/   → current preferences
-       PUT /api/preferences/   → save preferences"""
+    PUT /api/preferences/   → save preferences"""
 
     def get(self, request):
         try:
             p = request.user.preferences
             data = {
-                "tone":       p.tone,
-                "language":   p.language,
+                "tone": p.tone,
+                "language": p.language,
                 "profession": p.profession,
-                "extra":      p.extra,
+                "extra": p.extra,
             }
         except UserPreference.DoesNotExist:
-            data = {"tone": "balanced", "language": "English", "profession": "", "extra": {}}
+            data = {
+                "tone": "balanced",
+                "language": "English",
+                "profession": "",
+                "extra": {},
+            }
         return JsonResponse(data)
 
     def put(self, request):
@@ -174,10 +209,10 @@ class PreferencesView(LoginRequiredMixin, View):
         UserPreference.objects.update_or_create(
             user=request.user,
             defaults={
-                "tone":       body.get("tone", "balanced"),
-                "language":   body.get("language", "English"),
+                "tone": body.get("tone", "balanced"),
+                "language": body.get("language", "English"),
                 "profession": body.get("profession", ""),
-                "extra":      body.get("extra", {}),
+                "extra": body.get("extra", {}),
             },
         )
         return JsonResponse({"status": "saved"})
@@ -185,10 +220,11 @@ class PreferencesView(LoginRequiredMixin, View):
 
 # ── Memories ───────────────────────────────────────────────────────────────
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class MemoriesView(LoginRequiredMixin, View):
     """GET    /api/memories/           → list memories
-       DELETE /api/memories/<id>/      → delete one memory"""
+    DELETE /api/memories/<id>/      → delete one memory"""
 
     def get(self, request):
         memories = Memory.objects.filter(user=request.user)[:50]
@@ -207,16 +243,18 @@ class MemoriesView(LoginRequiredMixin, View):
 
 # ── Auth (simple session-based) ────────────────────────────────────────────
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class LoginView(View):
     """POST /api/auth/login/   { "username": "...", "password": "..." }"""
 
     def post(self, request):
         from django.contrib.auth import authenticate, login
-        body     = json.loads(request.body)
+
+        body = json.loads(request.body)
         username = body.get("username", "")
         password = body.get("password", "")
-        user     = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
             return JsonResponse({"status": "ok", "username": user.username})
@@ -229,6 +267,7 @@ class LogoutView(LoginRequiredMixin, View):
 
     def post(self, request):
         from django.contrib.auth import logout
+
         logout(request)
         return JsonResponse({"status": "logged out"})
 
@@ -240,7 +279,8 @@ class RegisterView(View):
     def post(self, request):
         from django.contrib.auth import authenticate, login
         from django.contrib.auth.models import User
-        body     = json.loads(request.body)
+
+        body = json.loads(request.body)
         username = body.get("username", "").strip()
         password = body.get("password", "").strip()
 
@@ -251,7 +291,9 @@ class RegisterView(View):
 
         user = User.objects.create_user(username=username, password=password)
         login(request, user)
-        return JsonResponse({"status": "created", "username": user.username}, status=201)
+        return JsonResponse(
+            {"status": "created", "username": user.username}, status=201
+        )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -265,19 +307,19 @@ class MeView(LoginRequiredMixin, View):
 @method_decorator(csrf_exempt, name="dispatch")
 class FeedbackView(LoginRequiredMixin, View):
     """POST /api/feedback/
-       { "message_id": "...", "signal": "regenerate"|"negative"|"positive" }
+    { "message_id": "...", "signal": "regenerate"|"negative"|"positive" }
     """
+
     def post(self, request):
-        body    = json.loads(request.body)
-        signal  = body.get("signal")
-        user    = request.user
+        body = json.loads(request.body)
+        signal = body.get("signal")
+        user = request.user
 
         if signal in ("negative", "regenerate"):
             # Find the message to understand what was disliked
             try:
                 msg = Message.objects.get(
-                    id=body["message_id"],
-                    conversation__user=user
+                    id=body["message_id"], conversation__user=user
                 )
                 Memory.objects.create(
                     user=user,
