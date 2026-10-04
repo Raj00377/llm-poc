@@ -1,4 +1,5 @@
 # chat/services/context.py
+from chat.models import UserPreference, Memory
 
 
 def get_user_context(user) -> dict:

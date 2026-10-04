@@ -126,55 +126,29 @@ class ChatView(LoginRequiredMixin, View):
         system = build_system_prompt(ctx)
 
         # ── Stream ───────────────────────────────────────────────────────
-        # def stream():
-        #     full_response = ""
-        #     try:
-        #         for token in stream_llm(system=system, messages=history):
-        #             full_response += token
-        #             yield f"data: {json.dumps({'token': token})}\n\n"
-        #     except Exception as e:
-        #         yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        #     finally:
-        #         if full_response:
-        #             Message.objects.create(
-        #                 conversation=conv,
-        #                 role="assistant",
-        #                 content=full_response,
-        #             )
-        #             conv.save()   # bump updated_at so it sorts to top
-        #             extract_and_save(user, user_msg, full_response, conv)
-
-        #         yield "data: [DONE]\n\n"
-
-        # response = StreamingHttpResponse(stream(), content_type="text/event-stream")
-        # response["Cache-Control"]               = "no-cache"
-        # response["X-Accel-Buffering"]           = "no"   # disable Nginx buffering
-        # return response
-        # chat/views.py — update stream() inside ChatView.post
-        # Change the yield format from {"token": "..."} to plain text chunks
-
         def stream():
             full_response = ""
             try:
                 for token in stream_llm(system=system, messages=history):
                     full_response += token
-                    # assistant-ui reads plain "0:" prefixed data-stream format
-                    yield f"0:{json.dumps(token)}\n"
+                    yield f"data: {json.dumps({'token': token})}\n\n"
             except Exception as e:
-                yield f"3:{json.dumps(str(e))}\n"
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
             finally:
                 if full_response:
                     Message.objects.create(
-                        conversation=conv, role="assistant", content=full_response
+                        conversation=conv,
+                        role="assistant",
+                        content=full_response,
                     )
-                    conv.save()
-                    analyse_and_update(user, user_msg, full_response, conv)
+                    conv.save()  # bump updated_at so it sorts to top
+                    extract_and_save(user, user_msg, full_response, conv)
 
-        response = StreamingHttpResponse(
-            stream(), content_type="text/plain; charset=utf-8"
-        )
+                yield "data: [DONE]\n\n"
+
+        response = StreamingHttpResponse(stream(), content_type="text/event-stream")
         response["Cache-Control"] = "no-cache"
-        response["X-Accel-Buffering"] = "no"
+        response["X-Accel-Buffering"] = "no"  # disable Nginx buffering
         return response
 
 
