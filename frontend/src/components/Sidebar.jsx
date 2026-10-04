@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react"
+import { MessageSquare, Plus, Trash2, LogOut } from "lucide-react"
+import { cn } from "../lib/utils"
 
 function getCookie(name) {
   return document.cookie.split("; ").find((r) => r.startsWith(name + "="))?.split("=")[1]
@@ -19,11 +21,10 @@ export function Sidebar({ activeConvId, onSelect, onNew, onLogout }) {
     const res  = await fetch("/api/conversations/", {
       method:      "POST",
       credentials: "include",
-      headers: { "X-CSRFToken": getCookie("csrftoken") },
+      headers:     { "X-CSRFToken": getCookie("csrftoken") },
     })
     const data = await res.json()
     onNew(data.id)
-    load()
   }
 
   const deleteConv = async (e, id) => {
@@ -31,103 +32,57 @@ export function Sidebar({ activeConvId, onSelect, onNew, onLogout }) {
     await fetch(`/api/conversations/${id}/`, {
       method:      "DELETE",
       credentials: "include",
-      headers: { "X-CSRFToken": getCookie("csrftoken") },
+      headers:     { "X-CSRFToken": getCookie("csrftoken") },
     })
     if (id === activeConvId) onNew(null)
     load()
   }
 
   return (
-    <aside style={styles.sidebar}>
-      <button style={styles.newBtn} onClick={newChat}>+ New Chat</button>
+    <aside className="flex w-64 min-w-64 flex-col gap-2 border-r border-[var(--color-border)] bg-[#171717] p-3">
 
-      <div style={styles.list}>
+      <button
+        onClick={newChat}
+        className="flex w-full items-center gap-2 rounded-lg bg-[var(--color-muted)] px-3 py-2.5 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-accent)] cursor-pointer border-none"
+      >
+        <Plus size={16} />
+        New Chat
+      </button>
+
+      <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
+        {conversations.length === 0 && (
+          <p className="mt-6 text-center text-xs text-[var(--color-muted-foreground)]">No conversations yet</p>
+        )}
         {conversations.map((c) => (
           <div
             key={c.id}
-            style={{
-              ...styles.item,
-              ...(c.id === activeConvId ? styles.activeItem : {}),
-            }}
             onClick={() => onSelect(c.id)}
+            className={cn(
+              "group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+              c.id === activeConvId
+                ? "bg-[var(--color-muted)] text-[var(--color-foreground)]"
+                : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+            )}
           >
-            <span style={styles.itemTitle}>{c.title || "Untitled"}</span>
-            <button style={styles.deleteBtn} onClick={(e) => deleteConv(e, c.id)}>✕</button>
+            <MessageSquare size={14} className="shrink-0 opacity-60" />
+            <span className="flex-1 truncate">{c.title || "Untitled"}</span>
+            <button
+              onClick={(e) => deleteConv(e, c.id)}
+              className="hidden group-hover:flex items-center text-[var(--color-muted-foreground)] hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0.5 rounded"
+            >
+              <Trash2 size={13} />
+            </button>
           </div>
         ))}
       </div>
 
-      <button style={styles.logoutBtn} onClick={onLogout}>Sign out</button>
+      <button
+        onClick={onLogout}
+        className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)] cursor-pointer bg-transparent"
+      >
+        <LogOut size={14} />
+        Sign out
+      </button>
     </aside>
   )
-}
-
-const styles = {
-  sidebar: {
-    width:          "260px",
-    minWidth:       "260px",
-    background:     "#16161e",
-    borderRight:    "1px solid #333",
-    display:        "flex",
-    flexDirection:  "column",
-    padding:        "12px 8px",
-    gap:            "8px",
-  },
-  newBtn: {
-    background:   "#4f46e5",
-    color:        "#fff",
-    border:       "none",
-    borderRadius: "8px",
-    padding:      "10px",
-    cursor:       "pointer",
-    fontWeight:   600,
-    fontSize:     "14px",
-    marginBottom: "8px",
-  },
-  list: {
-    flex:      1,
-    overflowY: "auto",
-    display:   "flex",
-    flexDirection: "column",
-    gap:       "4px",
-  },
-  item: {
-    display:        "flex",
-    alignItems:     "center",
-    justifyContent: "space-between",
-    padding:        "10px 12px",
-    borderRadius:   "8px",
-    cursor:         "pointer",
-    color:          "#ccc",
-    fontSize:       "13px",
-    userSelect:     "none",
-  },
-  activeItem: {
-    background: "#2a2a3e",
-    color:      "#fff",
-  },
-  itemTitle: {
-    overflow:     "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace:   "nowrap",
-    flex:         1,
-  },
-  deleteBtn: {
-    background: "transparent",
-    border:     "none",
-    color:      "#666",
-    cursor:     "pointer",
-    fontSize:   "11px",
-    padding:    "2px 4px",
-    flexShrink: 0,
-  },
-  logoutBtn: {
-    background:   "transparent",
-    border:       "1px solid #444",
-    color:        "#888",
-    borderRadius: "8px",
-    padding:      "8px",
-    cursor:       "pointer",
-    fontSize:     "13px",
-  },
 }

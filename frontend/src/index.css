@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/* Markdown prose inside assistant messages */
+.aui-md h1,
+.aui-md h2,
+.aui-md h3 {
+  font-weight: 600;
+  margin: 0.75rem 0 0.4rem;
+}
+.aui-md h1 {
+  font-size: 1.25rem;
+}
+.aui-md h2 {
+  font-size: 1.1rem;
+}
+.aui-md h3 {
+  font-size: 1rem;
+}
+.aui-md p {
+  margin: 0.4rem 0;
+  line-height: 1.7;
+}
+.aui-md ul,
+.aui-md ol {
+  padding-left: 1.4rem;
+  margin: 0.4rem 0;
+}
+.aui-md li {
+  margin: 0.2rem 0;
+}
+.aui-md pre {
+  background: #0d0d14;
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.6rem 0;
+}
+.aui-md code {
+  font-family: monospace;
+  font-size: 0.85em;
+  background: #1a1a2e;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+.aui-md pre code {
+  background: none;
+  padding: 0;
+}
+.aui-md blockquote {
+  border-left: 3px solid #4f46e5;
+  padding-left: 1rem;
+  color: #94a3b8;
+  margin: 0.6rem 0;
+}
+.aui-md a {
+  color: #818cf8;
+  text-decoration: underline;
+}
+.aui-md table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6rem 0;
+}
+.aui-md th,
+.aui-md td {
+  border: 1px solid #334155;
+  padding: 0.4rem 0.8rem;
+}
+.aui-md th {
+  background: #1e1e2e;
+}
+
+
+/* ── Design tokens (dark theme matching ChatGPT) ─────────────────── */
+:root {
+  --color-background:        #212121;
+  --color-foreground:        #ececec;
+  --color-muted:             #2f2f2f;
+  --color-muted-foreground:  #8e8ea0;
+  --color-primary:           #19c37d;
+  --color-primary-foreground:#000;
+  --color-accent:            #2f2f2f;
+  --color-accent-foreground: #ececec;
+  --color-border:            #3f3f3f;
+  --color-input:             #3f3f3f;
+  --color-ring:              #19c37d;
+  --color-popover:           #2f2f2f;
+  --color-popover-foreground:#ececec;
+  --color-destructive:       #ef4444;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Map CSS vars to Tailwind's expected names */
+.bg-background         { background-color: var(--color-background); }
+.bg-muted              { background-color: var(--color-muted); }
+.bg-primary            { background-color: var(--color-primary); }
+.bg-accent             { background-color: var(--color-accent); }
+.bg-popover            { background-color: var(--color-popover); }
+.text-foreground       { color: var(--color-foreground); }
+.text-muted-foreground { color: var(--color-muted-foreground); }
+.text-primary          { color: var(--color-primary); }
+.text-primary-foreground { color: var(--color-primary-foreground); }
+.text-accent-foreground  { color: var(--color-accent-foreground); }
+.text-popover-foreground { color: var(--color-popover-foreground); }
+.text-destructive      { color: var(--color-destructive); }
+.border-input          { border-color: var(--color-input); }
+.ring-ring             { --tw-ring-color: var(--color-ring); }
+.caret-primary         { caret-color: var(--color-primary); }
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-muted); border-radius: 9999px; }
+
+/* Sidebar active state */
+.sidebar-item-active { background: var(--color-muted); }
