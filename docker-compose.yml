@@ -1,31 +1,32 @@
 services:
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: llm_poc_backend:latest
     container_name: llm_poc_backend
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./backend:/src          # live reload — code changes reflect instantly
+      - ./backend:/src # live reload — code changes reflect instantly
     ports:
       - "8000:8000"
     env_file:
       - .env
     environment:
       - DJANGO_SETTINGS_MODULE=llm_poc.settings
-      - PYTHONDONTWRITEBYTECODE=1    # Prevents .pyc caching issues
+      - PYTHONDONTWRITEBYTECODE=1 # Prevents .pyc caching issues
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: llm_poc_frontend:latest # <--- Explicit image tag
     container_name: llm_poc_frontend
     volumes:
-      - ./frontend/src:/app/src  # live reload for React
-      - /app/node_modules        # don't override node_modules from host
+      - ./frontend/src:/app/src # live reload for React
+      - /app/node_modules # don't override node_modules from host
     ports:
-      - "5173:5173"              # Vite default port
+      - "5173:5173" # Vite default port
     env_file:
       - .env
     environment:

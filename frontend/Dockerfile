@@ -2,7 +2,7 @@ FROM node:24.19-alpine3.24
 
 RUN apk update && apk upgrade --no-cache
 
-WORKDIR /src
+WORKDIR /app
 
 COPY package.json package-lock.json ./
 
