@@ -47,38 +47,55 @@
 
 // frontend/src/App.jsx
 // frontend/src/App.jsx
-import { useState, useMemo }              from "react"
-import { AssistantRuntimeProvider,
-         useLocalRuntime }                from "@assistant-ui/react"
-import { Thread }                         from "./components/Thread"
-import { Sidebar }                        from "./components/Sidebar"
-import { AuthPage }                       from "./pages/AuthPage"
-import { useAuth }                        from "./hooks/useAuth"
-import { createDjangoAdapter }            from "./lib/djangoAdapter"
+import { useState, useMemo, useEffect } from "react";
+import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
+import { Thread } from "./components/Thread";
+import { Sidebar } from "./components/Sidebar";
+import { AuthPage } from "./pages/AuthPage";
+import { useAuth } from "./hooks/useAuth";
+import { createDjangoAdapter } from "./lib/djangoAdapter";
+import { useChat } from "./hooks/useChat";
 
 function ChatApp({ convId }) {
   // useMemo so adapter isn't recreated on every render
-  const adapter = useMemo(() => createDjangoAdapter(convId), [convId])
-  const runtime = useLocalRuntime(adapter)
+  const adapter = useMemo(() => createDjangoAdapter(convId), [convId]);
+
+  const { messages, send, streaming, error, loadMessages, loading } =
+    useChat(convId);
+
+  useEffect(() => {
+    if (convId) loadMessages(convId);
+  }, [convId]);
+
+  if (loading) return <div>Loading...</div>;
+
+  return <ChatRuntime key={convId} adapter={adapter} messages={messages} />;
+}
+
+function ChatRuntime({ adapter, messages }) {
+  const runtime = useLocalRuntime(adapter, {
+    initialMessages: messages,
+  });
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <Thread />
     </AssistantRuntimeProvider>
-  )
+  );
 }
 
 export default function App() {
-  const { user, loading, login, register, logout } = useAuth()
-  const [convId, setConvId] = useState(null)
+  const { user, loading, login, register, logout } = useAuth();
+  const [convId, setConvId] = useState(null);
 
-  if (loading) return (
-    <div className="h-screen flex items-center justify-center bg-zinc-900 text-zinc-400">
-      Loading…
-    </div>
-  )
+  if (loading)
+    return (
+      <div className="h-screen flex items-center justify-center bg-zinc-900 text-zinc-400">
+        Loading…
+      </div>
+    );
 
-  if (!user) return <AuthPage onLogin={login} onRegister={register} />
+  if (!user) return <AuthPage onLogin={login} onRegister={register} />;
 
   return (
     <div className="flex h-screen bg-zinc-900 overflow-hidden">
@@ -89,15 +106,14 @@ export default function App() {
         onLogout={logout}
       />
       <main className="flex-1 overflow-hidden">
-        {convId
-          ? <ChatApp key={convId} convId={convId} />
-          : (
-            <div className="h-full flex items-center justify-center text-zinc-500 text-sm">
-              Select a chat or start a new one
-            </div>
-          )
-        }
+        {convId ? (
+          <ChatApp key={convId} convId={convId} />
+        ) : (
+          <div className="h-full flex items-center justify-center text-zinc-500 text-sm">
+            Select a chat or start a new one
+          </div>
+        )}
       </main>
     </div>
-  )
+  );
 }
