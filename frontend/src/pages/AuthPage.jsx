@@ -16,7 +16,7 @@ export function AuthPage({ onLogin, onRegister }) {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>💬 ChatGPT Clone</h1>
+        <h1 style={styles.title}>💬 AI Module</h1>
 
         <div style={styles.tabs}>
           <button
