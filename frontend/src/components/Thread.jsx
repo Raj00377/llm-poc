@@ -28,12 +28,12 @@ import { cn } from "../lib/utils";
 export function Thread({ autoFocus = true }) {
   return (
     <ThreadPrimitive.Root
-      className="aui-root bg-background flex h-full flex-col @container"
+      className="aui-root chat-bg flex h-full flex-col @container"
       style={
         {
-          // "--thread-max-width": "44rem",
-          // "--composer-radius": "1rem",
-          // "--composer-padding": "8px",
+          "--thread-max-width": "75%",
+          "--composer-radius": "0.2rem",
+          "--composer-padding": "8px",
         }
       }
     >
@@ -62,7 +62,7 @@ export function Thread({ autoFocus = true }) {
           </div>
 
           {/* Sticky footer */}
-          <ThreadPrimitive.ViewportFooter className="sticky bottom-0 pt-2">
+          <ThreadPrimitive.ViewportFooter className="sticky bottom-4 pt-2">
             <ThreadScrollToBottom />
             {/* <MinimalComposer /> */}
             <Composer autoFocus={autoFocus} />
@@ -80,7 +80,7 @@ function ThreadScrollToBottom() {
       <TooltipIconButton
         tooltip="Scroll to bottom"
         variant="outline"
-        className="absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible"
+        className="absolute -top-12 left-[50%] z-10 self-center rounded-full p-4 disabled:invisible"
       >
         <ArrowDownIcon className="absolute" />
       </TooltipIconButton>
@@ -99,7 +99,7 @@ function UserMessage() {
       className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [&:where(>*)]:col-start-2"
     >
       <div className="relative col-start-2 min-w-0">
-        <div className="bg-muted text-foreground rounded-(--composer-radius) peer px-4 py-2 wrap-break-word empty:hidden">
+        <div className="bg-primary-accent rounded-md text-foreground peer px-4 py-2 wrap-break-word empty:hidden">
           <MessagePrimitive.Content />
         </div>
         {/* Edit button on hover */}
@@ -224,7 +224,7 @@ function BranchPicker({ className }) {
 function EditComposer() {
   return (
     <MessagePrimitive.Root className="flex flex-col px-2">
-      <ComposerPrimitive.Root className="border-foreground/10 focus-within:border-foreground/25 ms-auto flex w-full max-w-[85%] cursor-text flex-col rounded-(--composer-radius) border bg-(--composer-bg) transition-[border-color]">
+      <ComposerPrimitive.Root className="border-foreground/10 focus-within:border-foreground/25 ms-auto flex w-full max-w-[85%] cursor-text flex-col rounded-md border bg-(--composer-bg) transition-[border-color]">
         <ComposerPrimitive.Input
           className="text-foreground min-h-14 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-base outline-none"
           autoFocus
@@ -248,10 +248,10 @@ function EditComposer() {
 
 function MinimalComposer() {
   return (
-    <ComposerPrimitive.Root className="flex w-full flex-col rounded-3xl border bg-muted">
+    <ComposerPrimitive.Root className="flex w-full rounded-3xl border bg-white">
       <ComposerPrimitive.Input
         placeholder="Ask anything..."
-        className="min-h-10 w-full resize-none bg-transparent px-5 pt-4 pb-3 text-sm focus:outline-none"
+        className="min-h-10 w-full resize-none bg-transparent px-5 py-4 text-sm focus:outline-none"
         rows={1}
       />
       <div className="flex items-center justify-end px-3 pb-3">
@@ -266,15 +266,17 @@ function MinimalComposer() {
 /* ── Composer ────────────────────────────────────────────────────── */
 function Composer({ autoFocus }) {
   return (
-    <ComposerPrimitive.Root className="flex w-full flex-col rounded-3xl border bg-muted">
+    <ComposerPrimitive.Root
+    compact
+     className="w-full rounded-lg border bg-white group/composer flex flex-col data-[compact]:flex-row data-[compact]:items-center">
       <ComposerPrimitive.Input
         placeholder="Ask anything..."
-        className="min-h-10 w-full resize-none bg-transparent px-5 pt-4 pb-3 text-sm focus:outline-none"
+        className="min-h-10 max-h-50 w-full resize-none bg-transparent px-5 py-4 text-sm focus:outline-none"
         rows={1}
         autoFocus={autoFocus}
         enterKeyHint="send"
       />
-      <div className="flex items-center justify-end px-3 pb-3">
+      <div className="flex items-center justify-end px-3 py-3">
         {/* Send */}
         <AuiIf condition={(s) => !s.composer.canCancel}>
           <ComposerPrimitive.Send asChild>
@@ -284,7 +286,7 @@ function Composer({ autoFocus }) {
               size="icon"
               className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-30"
             >
-              <ArrowUpIcon className="size-4" />
+              <ArrowUpIcon className="size-4" stroke="white" />
             </TooltipIconButton>
           </ComposerPrimitive.Send>
         </AuiIf>
@@ -297,7 +299,7 @@ function Composer({ autoFocus }) {
               size="icon"
               className="size-8 rounded-full"
             >
-              <SquareIcon className="size-4 fill-current" />
+              <SquareIcon className="size-4 fill-white stroke-white" />
             </Button>
           </ComposerPrimitive.Cancel>
         </AuiIf>
