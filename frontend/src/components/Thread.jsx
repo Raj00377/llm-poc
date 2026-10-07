@@ -29,27 +29,26 @@ export function Thread({ autoFocus = true }) {
   return (
     <ThreadPrimitive.Root
       className="aui-root chat-bg flex h-full flex-col @container"
-      style={
-        {
-          "--thread-max-width": "75%",
-          "--composer-radius": "0.2rem",
-          "--composer-padding": "8px",
-        }
-      }
+      style={{
+        "--thread-max-width": "75%",
+        "--composer-radius": "0.2rem",
+        "--composer-padding": "8px",
+      }}
     >
       <ThreadPrimitive.Viewport
         turnAnchor="top"
+        topAnchorMessageClamp={{ tallerThan: "10em", visibleHeight: "6em" }}
         className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
       >
-        <div className="mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4">
+        <div className="mx-auto justify-center flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4">
           {/* Welcome / empty state */}
-          <ThreadPrimitive.Empty>
+          <AuiIf condition={(s) => s.thread.isEmpty}>
             <div className="mb-6 flex flex-col px-2">
               <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-2xl font-medium tracking-tight duration-200 text-foreground">
                 How can I help you today?
               </p>
             </div>
-          </ThreadPrimitive.Empty>
+          </AuiIf>
 
           {/* Messages */}
           <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
@@ -62,7 +61,7 @@ export function Thread({ autoFocus = true }) {
           </div>
 
           {/* Sticky footer */}
-          <ThreadPrimitive.ViewportFooter className="sticky bottom-4 pt-2">
+          <ThreadPrimitive.ViewportFooter className="sticky bottom-0 rounded-lg py-4 bg-linear-to-t from-white to-white/40 ">
             <ThreadScrollToBottom />
             {/* <MinimalComposer /> */}
             <Composer autoFocus={autoFocus} />
@@ -80,13 +79,10 @@ function ThreadScrollToBottom() {
       <TooltipIconButton
         tooltip="Scroll to bottom"
         variant="outline"
-        className="absolute -top-12 left-[50%] z-10 self-center rounded-full p-4 disabled:invisible"
+        className="absolute -top-8 left-[50%] z-10 self-center rounded-full p-4 disabled:invisible shadow-lg"
       >
         <ArrowDownIcon className="absolute" />
       </TooltipIconButton>
-      {/* <button className="self-center disabled:invisible rounded-full">
-        <ArrowDownIcon />
-      </button> */}
     </ThreadPrimitive.ScrollToBottom>
   );
 }
@@ -153,10 +149,10 @@ function AssistantActionBar() {
     <ActionBarPrimitive.Root
       hideWhenRunning
       autohide="not-last"
-      className="text-muted-foreground animate-in fade-in -ms-1 flex gap-1 duration-200"
+      className="text-muted-foreground animate-in fade-in -ms-1 flex gap-2 duration-400"
     >
       <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton tooltip="Copy">
+        <TooltipIconButton tooltip="Copy" className='size-5'>
           <AuiIf condition={(s) => s.message.isCopied}>
             <CheckIcon className="animate-in zoom-in-50 fade-in duration-200 ease-out" />
           </AuiIf>
@@ -169,23 +165,23 @@ function AssistantActionBar() {
       <ActionBarPrimitive.FeedbackPositive asChild>
         <TooltipIconButton
           tooltip="Helpful"
-          className="data-[submitted=true]:bg-accent data-[submitted=true]:text-accent-foreground"
+          className="data-[submitted=true]:bg-accent data-[submitted=true]:text-accent-foreground size-5"
         >
-          <ThumbsUpIcon />
+          <ThumbsUpIcon  />
         </TooltipIconButton>
       </ActionBarPrimitive.FeedbackPositive>
 
       <ActionBarPrimitive.FeedbackNegative asChild>
         <TooltipIconButton
           tooltip="Not helpful"
-          className="data-[submitted=true]:bg-accent data-[submitted=true]:text-accent-foreground"
+          className="data-[submitted=true]:bg-accent data-[submitted=true]:text-accent-foreground size-5"
         >
           <ThumbsDownIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.FeedbackNegative>
 
       <ActionBarPrimitive.Reload asChild>
-        <TooltipIconButton tooltip="Refresh">
+        <TooltipIconButton tooltip="Refresh" className="size-5">
           <RefreshCwIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Reload>
@@ -267,8 +263,9 @@ function MinimalComposer() {
 function Composer({ autoFocus }) {
   return (
     <ComposerPrimitive.Root
-    compact
-     className="w-full rounded-lg border bg-white group/composer flex flex-col data-[compact]:flex-row data-[compact]:items-center">
+      compact
+      className="w-full rounded-lg border bg-white group/composer flex flex-col data-compact:flex-row data-compact:items-center"
+    >
       <ComposerPrimitive.Input
         placeholder="Ask anything..."
         className="min-h-10 max-h-50 w-full resize-none bg-transparent px-5 py-4 text-sm focus:outline-none"
