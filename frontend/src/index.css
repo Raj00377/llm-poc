@@ -71,15 +71,15 @@
 }
 
 
-/* ── Design tokens (dark theme matching ChatGPT) ─────────────────── */
+/* ── Design tokens (dark theme) ─────────────────── */
 :root {
-  --color-background:        #212121;
-  --color-foreground:        #ececec;
+  --color-background:        #FFFFFF;
+  --color-foreground:        #354052;
   --color-muted:             #2f2f2f;
   --color-muted-foreground:  #8e8ea0;
-  --color-primary:           #19c37d;
+  --color-primary:           #615BFC;
   --color-primary-foreground:#000;
-  --color-accent:            #2f2f2f;
+  --color-accent:            #615BFC;
   --color-accent-foreground: #ececec;
   --color-border:            #3f3f3f;
   --color-input:             #3f3f3f;
@@ -87,6 +87,9 @@
   --color-popover:           #2f2f2f;
   --color-popover-foreground:#ececec;
   --color-destructive:       #ef4444;
+  --color-chatbg: #FCFCFF;
+  --color-text: #354052;
+  --color-primary-accent: #EEEDFF;
 }
 
 html, body, #root {
@@ -113,6 +116,11 @@ html, body, #root {
 .border-input          { border-color: var(--color-input); }
 .ring-ring             { --tw-ring-color: var(--color-ring); }
 .caret-primary         { caret-color: var(--color-primary); }
+
+.chat-bg{ background-color: var(--color-chatbg);}
+.text-color { color: var(--color-text);}
+.text-primary { color: var(--color-primary);}
+.bg-primary-accent { background-color: var(--color-primary-accent);}
 
 /* Scrollbar */
 ::-webkit-scrollbar       { width: 6px; }
