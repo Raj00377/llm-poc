@@ -126,6 +126,7 @@ import { AuthPage } from "./pages/AuthPage";
 import { useAuth } from "./hooks/useAuth";
 import { createDjangoAdapter } from "./lib/djangoRuntime";
 import { useChat } from "./hooks/useChat";
+import { LoadingSpinner } from "#components/assistant-ui/elements/Loader";
 
 /* ── Per-conversation chat panel ─────────────────────────────────── */
 function ChatApp({ convId }) {
@@ -138,7 +139,12 @@ function ChatApp({ convId }) {
     if (convId) loadMessages(convId);
   }, [convId]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <div className="flex flex-1 justify-center items-center">
+        <LoadingSpinner className={"size-7"} />
+      </div>
+    );
 
   return <ChatRuntime key={convId} adapter={adapter} messages={messages} />;
 }

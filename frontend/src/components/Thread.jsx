@@ -6,6 +6,7 @@ import {
   ThreadPrimitive,
   AuiIf,
 } from "@assistant-ui/react";
+
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -23,6 +24,7 @@ import { MarkdownText } from "./MarkDownText";
 import { TooltipIconButton } from "./TooltipIconButton";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
+import { ThinkingIndicator } from "./assistant-ui/elements/thinking-indicator";
 
 /* ── Thread root ─────────────────────────────────────────────────── */
 export function Thread({ autoFocus = true }) {
@@ -35,11 +37,7 @@ export function Thread({ autoFocus = true }) {
         "--composer-padding": "8px",
       }}
     >
-      <ThreadPrimitive.Viewport
-        turnAnchor="top"
-        topAnchorMessageClamp={{ tallerThan: "10em", visibleHeight: "6em" }}
-        className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
-      >
+      <ThreadPrimitive.Viewport className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth">
         <div className="mx-auto justify-center flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4">
           {/* Welcome / empty state */}
           <AuiIf condition={(s) => s.thread.isEmpty}>
@@ -58,6 +56,13 @@ export function Thread({ autoFocus = true }) {
                 AssistantMessage: AssistantMessage,
               }}
             />
+
+            <AuiIf condition={(s) => s.thread.isRunning}>
+              <ThinkingIndicator
+                label="Thinking"
+                className="text-md"
+              />
+            </AuiIf>
           </div>
 
           {/* Sticky footer */}
@@ -152,7 +157,7 @@ function AssistantActionBar() {
       className="text-muted-foreground animate-in fade-in -ms-1 flex gap-2 duration-400"
     >
       <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton tooltip="Copy" className='size-5'>
+        <TooltipIconButton tooltip="Copy" className="size-5">
           <AuiIf condition={(s) => s.message.isCopied}>
             <CheckIcon className="animate-in zoom-in-50 fade-in duration-200 ease-out" />
           </AuiIf>
@@ -167,7 +172,7 @@ function AssistantActionBar() {
           tooltip="Helpful"
           className="data-[submitted=true]:bg-accent data-[submitted=true]:text-accent-foreground size-5"
         >
-          <ThumbsUpIcon  />
+          <ThumbsUpIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.FeedbackPositive>
 
@@ -264,7 +269,7 @@ function Composer({ autoFocus }) {
   return (
     <ComposerPrimitive.Root
       compact
-      className="w-full rounded-lg border bg-white group/composer flex flex-col data-compact:flex-row data-compact:items-center"
+      className="w-full rounded-lg border border-gray-400 bg-white group/composer flex flex-col data-compact:flex-row data-compact:items-center"
     >
       <ComposerPrimitive.Input
         placeholder="Ask anything..."

@@ -1,17 +1,22 @@
-import { defineConfig } from "vite"
-import react from "@vitejs/plugin-react"
-import tailwindcss from "@tailwindcss/vite"
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-    plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@":  "/src",
+    },
+  },
   server: {
-    host: "0.0.0.0",    // required for Docker
+    host: "0.0.0.0", // required for Docker
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://backend:8000",  // "backend" = docker-compose service name
+        target: "http://backend:8000", // "backend" = docker-compose service name
         changeOrigin: true,
-      }
-    }
-  }
-})
+      },
+    },
+  },
+});
