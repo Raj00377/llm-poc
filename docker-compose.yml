@@ -24,7 +24,6 @@ services:
     container_name: llm_poc_frontend
     volumes:
       - ./frontend/src:/app/src # live reload for React
-      - /app/node_modules # don't override node_modules from host
     ports:
       - "5173:5173" # Vite default port
     env_file:
