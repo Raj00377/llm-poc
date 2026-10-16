@@ -11,14 +11,17 @@ export function useChat(convId) {
   const [messages,  setMessages]  = useState([])
   const [streaming, setStreaming] = useState(false)
   const [error,     setError]     = useState(null)
+  const [loading , setLoading] = useState(false);
 
   // Load existing messages for a conversation
   const loadMessages = useCallback(async (id) => {
+    setLoading(true);
     const res  = await fetch(`/api/conversations/${id}/`)
     const data = await res.json()
     setMessages(
-      data.messages.map((m) => ({ role: m.role, content: m.content }))
+      data.messages.map((m) => ({ id:m.id, role: m.role, content: [{type: "text", text:m.content}] }))
     )
+    setLoading(false);
   }, [])
 
   const send = useCallback(
@@ -90,5 +93,5 @@ export function useChat(convId) {
     [convId, streaming]
   )
 
-  return { messages, send, streaming, error, loadMessages }
+  return { messages, send, streaming, error, loadMessages, loading }
 }

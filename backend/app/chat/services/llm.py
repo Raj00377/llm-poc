@@ -3,20 +3,49 @@ import json
 import requests
 from typing import Generator
 
-LLM_API_URL = os.environ.get("LLM_API_URL", "https://api.groq.com/openai/v1/chat/completions")
+LLM_API_URL = os.environ.get(
+    "LLM_API_URL", "https://api.groq.com/openai/v1/chat/completions"
+)
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
-LLM_MODEL   = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
 
 
-def stream_llm(system: str, messages: list[dict]) -> Generator[str, None, None]:
+def extract_token(chunk: dict) -> str:
     """
-    Stream tokens from the blackboxed LLM.
-    Yields one token string at a time.
+    Extract a generated token from supported LLM response formats.
 
-    Expects OpenAI-compatible SSE format (works with Groq, OpenRouter,
-    Mistral, Gemini-compat endpoints, etc.).
-    To swap LLMs, just update LLM_API_URL + LLM_MODEL in .env.
+    Supports:
+    - OpenAI-compatible APIs: Groq, OpenRouter, etc.
+    - Ollama native /api/chat API.
     """
+
+    # OpenAI-compatible streaming format
+    if "choices" in chunk:
+        choices = chunk.get("choices") or []
+
+        if not choices:
+            return ""
+
+        delta = choices[0].get("delta") or {}
+        return delta.get("content") or ""
+
+    # Ollama native /api/chat streaming format
+    if "message" in chunk:
+        message = chunk.get("message") or {}
+        return message.get("content") or ""
+
+    return ""
+
+
+def stream_llm(
+    system: str,
+    messages: list[dict],
+) -> Generator[str, None, None]:
+    """
+    Stream generated text from an OpenAI-compatible or Ollama native API.
+    Yields one text fragment at a time.
+    """
+
     payload = {
         "model": LLM_MODEL,
         "stream": True,
@@ -25,26 +54,52 @@ def stream_llm(system: str, messages: list[dict]) -> Generator[str, None, None]:
             *messages,
         ],
     }
+
     headers = {
-        "Authorization": f"Bearer {LLM_API_KEY}",
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
     }
 
-    with requests.post(LLM_API_URL, json=payload, headers=headers, stream=True, timeout=60) as resp:
+    # Add authentication only when the provider requires it.
+    if LLM_API_KEY:
+        headers["Authorization"] = f"Bearer {LLM_API_KEY}"
+
+    with requests.post(
+        LLM_API_URL,
+        json=payload,
+        headers=headers,
+        stream=True,
+        timeout=(5, 180),
+    ) as resp:
         resp.raise_for_status()
+
         for raw_line in resp.iter_lines():
+            print(f"Raw line from LLM: {raw_line}")  # Debugging
             if not raw_line:
                 continue
-            line = raw_line.decode("utf-8")
-            if not line.startswith("data: "):
-                continue
-            data = line[6:]
-            if data.strip() == "[DONE]":
-                break
+
+            line = raw_line.decode("utf-8").strip()
+
+            # OpenAI-compatible SSE: data: {...}
+            if line.startswith("data:"):
+                data = line[len("data:") :].strip()
+
+                if data == "[DONE]":
+                    break
+
+            # Ollama native API: {...} as NDJSON
+            else:
+                data = line
+
             try:
                 chunk = json.loads(data)
-                token = chunk["choices"][0]["delta"].get("content", "")
-                if token:
-                    yield token
-            except (json.JSONDecodeError, KeyError, IndexError):
+            except json.JSONDecodeError:
                 continue
+
+            token = extract_token(chunk)
+
+            if token:
+                yield token
+
+            # Ollama native API signals completion with done=true.
+            if chunk.get("done") is True:
+                break
